@@ -45,7 +45,17 @@ chmod +x dist/plantuml-mcp-server.js
 
 ### With Claude Code
 
-Add to your `~/.claude-mcp/config.json`:
+Use the Claude Code CLI to add the MCP server:
+
+```bash
+claude mcp add plantuml --scope user --env PLANTUML_SERVER_URL=https://www.plantuml.com/plantuml -- node /path/to/plantuml-mcp-server/dist/plantuml-mcp-server.js
+```
+
+Replace `/path/to/plantuml-mcp-server` with the actual path to your installation.
+
+**Alternative: Manual Configuration**
+
+If you prefer manual setup, add to your `~/.claude-mcp/config.json`:
 
 ```json
 {
