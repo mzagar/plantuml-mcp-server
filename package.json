@@ -2,15 +2,31 @@
   "name": "plantuml-mcp-server",
   "version": "0.1.0",
   "description": "MCP server for generating PlantUML diagrams",
-  "type": "module",
-  "main": "dist/index.js",
-  "bin": {
-    "plantuml-mcp-server": "dist/index.js"
+  "author": "mzagar",
+  "license": "MIT",
+  "homepage": "https://github.com/mzagar/plantuml-mcp-server#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mzagar/plantuml-mcp-server.git"
   },
+  "bugs": {
+    "url": "https://github.com/mzagar/plantuml-mcp-server/issues"
+  },
+  "type": "module",
+  "main": "dist/plantuml-mcp-server.js",
+  "bin": {
+    "plantuml-mcp-server": "dist/plantuml-mcp-server.js"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node dist/index.js"
+    "start": "node dist/plantuml-mcp-server.js",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "mcp",

@@ -78,23 +78,16 @@ test-mcp: build-executable
 	@echo "🔓 Testing decode_plantuml tool:"
 	@mcp call decode_plantuml --params '{"encoded_string":"LOqnQyCm48Lt_GfLKmoEjMJgbDHJ8IacO3gMitHjrCedeJkHlr-KX4AtuxlllRTdWI9rZUefa8lLexw8P7wsji1r-0fogKjbB2wH8CdWqcfp16gPBOkFOR7ZRZirD9-ETWKMB7RSVOo9109X6NBhLnCMJhHfPRqsCsCndVgJDbTSUctUST67d4slpHd1YNceEf1W-GI7_qAGGw_DONfjtbloE7npEr_0_I1vtJwTKcUCZztxoip8fhlX6xZNZ11ZmtiaNzVu2m00"}' node $(DIST_DIR)/$(MAIN_FILE).js
 
-# Setup for Claude Code (creates config directory and shows instructions)
+# Setup for Claude Code using CLI command
 setup-claude:
 	@echo "⚙️  Setting up for Claude Code..."
-	@mkdir -p ~/.claude-mcp 2>/dev/null || true
-	@echo "📝 Add this to your ~/.claude-mcp/config.json:"
+	@echo "📝 Run this command to add the MCP server:"
 	@echo ""
-	@echo "{"
-	@echo "  \"servers\": {"
-	@echo "    \"plantuml\": {"
-	@echo "      \"command\": \"node\","
-	@echo "      \"args\": [\"$(PWD)/$(DIST_DIR)/$(MAIN_FILE).js\"],"
-	@echo "      \"env\": {"
-	@echo "        \"PLANTUML_SERVER_URL\": \"$(PLANTUML_SERVER_URL)\""
-	@echo "      }"
-	@echo "    }"
-	@echo "  }"
-	@echo "}"
+	@echo "Option 1 (Recommended - using npx):"
+	@echo "claude mcp add plantuml --scope user --env PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) -- npx plantuml-mcp-server"
+	@echo ""
+	@echo "Option 2 (Local installation):"
+	@echo "claude mcp add plantuml --scope user --env PLANTUML_SERVER_URL=$(PLANTUML_SERVER_URL) -- node /path/to/plantuml-mcp-server/$(DIST_DIR)/$(MAIN_FILE).js"
 	@echo ""
 	@echo "🔄 Then restart Claude Code to pick up the new MCP server."
 
