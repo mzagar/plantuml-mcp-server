@@ -1,0 +1,33 @@
+{
+  "name": "plantuml-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server for generating PlantUML diagrams",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "plantuml-mcp-server": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "plantuml",
+    "diagrams",
+    "claude"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "plantuml-encoder": "^1.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/plantuml-encoder": "^1.4.2",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
