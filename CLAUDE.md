@@ -4,17 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Common Development Commands
 
-### Building
+### Building and Running
 - `npm run build` - Compile TypeScript to JavaScript in the dist/ directory
 - `npm run dev` - Start TypeScript compiler in watch mode for development
-- `make build` - Clean and build the project using Makefile
+- `npm start` - Run the compiled server from dist/plantuml-mcp-server.js
+- `make build` - Clean and build the project (preferred)
+- `make run` - Build and run the server with proper setup
 - `make dev` - Run TypeScript in watch mode using Makefile
 
-### Running and Testing
-- `npm start` - Run the compiled server from dist/index.js
-- `make run` - Build and run the server with proper setup
+### Testing
+- `make test-mcp` - Test using mcptools CLI with sample PlantUML diagrams (comprehensive test including C4 diagrams)
 - `make test` - Test server functionality with background process
-- `make test-mcp` - Test using mcptools CLI with sample PlantUML diagrams
 
 ### Setup and Installation
 - `make install` - Install npm dependencies with Node.js version check
@@ -23,30 +23,36 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Architecture
 
-### Core Structure
-This is a Model Context Protocol (MCP) server that provides PlantUML diagram generation capabilities. The project follows a single-file architecture pattern:
+### Single-File MCP Server
+This is a Model Context Protocol (MCP) server that provides PlantUML diagram generation capabilities. The project follows a single-file architecture pattern with all core logic in `src/plantuml-mcp-server.ts:22-216`.
 
 **Main Components:**
-- `src/plantuml-mcp-server.ts` - Single main file containing the entire server implementation
-- `dist/` - Compiled JavaScript output directory
+- `src/plantuml-mcp-server.ts` - Complete MCP server implementation with PlantUML capabilities
+- `dist/` - Compiled JavaScript output directory (TypeScript target: ES2022, module: ESNext)
 - `Makefile` - Comprehensive build and development workflow management
+- `package.json` - Configured as ESM module with bin entry for npx support
 
-### MCP Server Implementation
-The server uses the `@modelcontextprotocol/sdk` and implements:
+### MCP Tools Implementation
+The server implements three MCP tools via the `PlantUMLMCPServer` class:
 
-**Tools Provided:**
-1. `generate_plantuml_diagram` - Generates diagram URLs and returns embeddable links
-2. `encode_plantuml` - Encodes PlantUML code for URL usage
+1. **`generate_plantuml_diagram`** (src/plantuml-mcp-server.ts:93-144)
+   - Generates PlantUML diagrams and returns embeddable URLs
+   - Supports SVG/PNG formats
+   - Validates server accessibility with fetch requests
+   - Returns markdown embed code
 
-**Key Classes and Functions:**
-- `PlantUMLMCPServer` class - Main server implementation with tool handlers
-- `encodePlantUML()` - Custom PlantUML encoding implementation
-- `encode64()`, `append3bytes()`, `encode6bit()` - PlantUML encoding utilities
+2. **`encode_plantuml`** (src/plantuml-mcp-server.ts:146-175)
+   - Encodes PlantUML code for URL usage using plantuml-encoder library
 
-### Environment Configuration
-- `PLANTUML_SERVER_URL` - Configurable PlantUML server (defaults to https://www.plantuml.com/plantuml)
+3. **`decode_plantuml`** (src/plantuml-mcp-server.ts:177-206)
+   - Decodes encoded PlantUML strings back to source code
+
+### Dependencies and Configuration
+- Uses `@modelcontextprotocol/sdk` for MCP protocol implementation
+- Uses `plantuml-encoder` library for encoding/decoding (src/plantuml-mcp-server.ts:11-17)
+- `PLANTUML_SERVER_URL` environment variable (defaults to https://www.plantuml.com/plantuml)
+- Requires Node.js 18+ (specified in package.json engines)
 - Server runs on stdio transport for MCP communication
-- Node.js 18+ required (specified in package.json engines)
 
 ### Development Workflow
-The project uses TypeScript with ESNext modules and strict type checking. The Makefile provides comprehensive commands for development, testing, and deployment. For Claude Code integration, the server should be configured in ~/.claude-mcp/config.json as shown in the `make setup-claude` command output.
+The project uses TypeScript with strict type checking. The comprehensive Makefile provides all necessary commands for development, testing, and deployment. The server can be installed via `npx plantuml-mcp-server` after publishing to npm, or run locally via `make run`.
