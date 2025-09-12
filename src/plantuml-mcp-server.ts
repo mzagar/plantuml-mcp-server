@@ -5,6 +5,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import plantumlEncoder from 'plantuml-encoder';
 
@@ -28,10 +30,12 @@ class PlantUMLMCPServer {
       version: '0.1.0',
       capabilities: {
         tools: {},
+        prompts: {},
       },
     });
 
     this.setupToolHandlers();
+    this.setupPromptHandlers();
   }
 
   private setupToolHandlers() {
@@ -39,19 +43,19 @@ class PlantUMLMCPServer {
       tools: [
         {
           name: 'generate_plantuml_diagram',
-          description: 'Generate a PlantUML diagram and return embeddable image URL',
+          description: 'Generate a PlantUML diagram with automatic syntax validation and error reporting for auto-fix workflows. Returns embeddable image URLs for valid diagrams or structured error details for invalid syntax that can be automatically corrected.',
           inputSchema: {
             type: 'object',
             properties: {
               plantuml_code: {
                 type: 'string',
-                description: 'PlantUML diagram code',
+                description: 'PlantUML diagram code. Will be automatically validated for syntax errors before generating the diagram URL.',
               },
               format: {
                 type: 'string',
                 enum: ['svg', 'png'],
                 default: 'svg',
-                description: 'Output image format',
+                description: 'Output image format (SVG or PNG)',
               },
             },
             required: ['plantuml_code'],
@@ -102,6 +106,45 @@ class PlantUMLMCPServer {
     });
   }
 
+  private async validatePlantUMLSyntax(encoded: string, originalCode: string) {
+    try {
+      // Use /txt endpoint for cleaner error messages
+      const validationUrl = `${PLANTUML_SERVER_URL}/txt/${encoded}`;
+      const response = await fetch(validationUrl);
+      
+      // Check for error in headers (PlantUML returns 200 even for syntax errors)
+      const errorMessage = response.headers.get('x-plantuml-diagram-error');
+      
+      if (errorMessage) {
+        // Extract error details from headers and body
+        const errorLine = response.headers.get('x-plantuml-diagram-error-line');
+        const responseText = await response.text();
+        
+        // Extract problematic code from response text if available
+        const lines = originalCode.split('\n');
+        const lineNum = errorLine ? parseInt(errorLine, 10) : null;
+        const problematicCode = lineNum && lineNum <= lines.length ? lines[lineNum - 1] : '';
+        
+        
+        return {
+          isValid: false,
+          error: {
+            message: errorMessage,
+            line: lineNum,
+            problematic_code: problematicCode?.trim() || '',
+            full_plantuml: originalCode,
+            context: responseText
+          }
+        };
+      }
+      
+      return { isValid: true };
+    } catch (error) {
+      // If validation endpoint fails, assume syntax is valid and let the main generation handle it
+      return { isValid: true };
+    }
+  }
+
   private async generateDiagram(args: any) {
     const { plantuml_code, format = 'svg' } = args;
 
@@ -113,10 +156,36 @@ class PlantUMLMCPServer {
       // Encode the PlantUML code
       const encoded = encodePlantUML(plantuml_code);
 
+      // Validate PlantUML syntax first
+      const validation = await this.validatePlantUMLSyntax(encoded, plantuml_code);
+      
+      if (!validation.isValid && validation.error) {
+        // Return structured error for Claude Code to auto-fix
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                validation_failed: true,
+                error_details: {
+                  error_message: validation.error.message,
+                  error_line: validation.error.line,
+                  problematic_code: validation.error.problematic_code,
+                  full_plantuml: validation.error.full_plantuml,
+                  context: validation.error.context
+                },
+                retry_instructions: 'The PlantUML code has syntax errors. Please fix the errors and retry with corrected syntax.'
+              }, null, 2)
+            }
+          ],
+          isError: true
+        };
+      }
+
       // Generate the diagram URL
       const diagramUrl = `${PLANTUML_SERVER_URL}/${format}/${encoded}`;
 
-      // Test if the URL is accessible
+      // Test if the URL is accessible (fallback validation)
       const response = await fetch(diagramUrl);
       if (!response.ok) {
         throw new Error(`PlantUML server returned ${response.status}: ${response.statusText}`);
@@ -203,6 +272,129 @@ class PlantUMLMCPServer {
         isError: true,
       };
     }
+  }
+
+  private setupPromptHandlers() {
+    this.server.setRequestHandler(ListPromptsRequestSchema, async () => ({
+      prompts: [
+        {
+          name: 'plantuml_error_handling',
+          description: 'Guidelines for handling PlantUML syntax errors and implementing auto-fix workflows',
+        },
+      ],
+    }));
+
+    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+      if (request.params.name === 'plantuml_error_handling') {
+        return {
+          description: 'PlantUML Error Handling and Auto-Fix Guidelines',
+          messages: [
+            {
+              role: 'user',
+              content: {
+                type: 'text',
+                text: 'How should I handle PlantUML syntax errors when generating diagrams with the PlantUML MCP server?'
+              }
+            },
+            {
+              role: 'assistant',
+              content: {
+                type: 'text',
+                text: `## PlantUML MCP Server - Error Handling & Auto-Fix Guide
+
+### Error Detection Workflow
+1. **Always attempt generation first** - Call \`generate_plantuml_diagram\` with your PlantUML code
+2. **Check response format** - Look for JSON responses containing \`validation_failed: true\`
+3. **Parse error details** - Extract specific error information for intelligent fixes
+4. **Auto-fix and retry** - Correct syntax based on error context and retry once
+5. **Maximum retry limit** - Attempt auto-fix maximum 2 times before showing user the error
+
+### Response Format Recognition
+
+**Success Response:**
+- Returns embeddable URLs and markdown embed code
+- Contains \`Successfully generated PlantUML diagram!\` message
+
+**Validation Error Response (JSON):**
+\`\`\`json
+{
+  "validation_failed": true,
+  "error_details": {
+    "error_message": "Syntax Error description",
+    "error_line": 3,
+    "problematic_code": "invalid syntax line",
+    "full_plantuml": "complete original code",
+    "context": "detailed error context"
+  },
+  "retry_instructions": "Fix errors and retry"
+}
+\`\`\`
+
+**Server Error Response:**
+- Generic error message for server connectivity issues
+
+### Common PlantUML Syntax Fixes
+
+**Missing Tags:**
+- Error: "No @startuml found"
+- Fix: Add \`@startuml\` at start and \`@enduml\` at end
+
+**Invalid Arrow Syntax:**  
+- Error: "Syntax Error" on arrow lines
+- Fix: Use \`->\` instead of \`>\`, \`-->\` for dashed arrows
+
+**Typos in Keywords:**
+- Error: "Unknown keyword" 
+- Fix: Check spelling of \`participant\`, \`class\`, \`note\`, etc.
+
+**Missing Quotes:**
+- Error: Syntax error on strings with spaces
+- Fix: Add quotes around strings containing spaces
+
+**Diagram Type Issues:**
+- Error: "Assumed diagram type: sequence" 
+- Fix: Use appropriate syntax for intended diagram type
+
+### Auto-Fix Implementation Strategy
+
+1. **Parse the error_line and problematic_code** from validation response
+2. **Apply common fixes** based on error_message patterns:
+   - Add missing @startuml/@enduml tags
+   - Fix arrow syntax (replace > with ->)  
+   - Add missing quotes around spaced strings
+   - Correct common keyword typos
+3. **Preserve user intent** - Keep original meaning while fixing syntax
+4. **Retry with fixed code** - Call generate_plantuml_diagram again
+5. **Explain fixes made** - Inform user what was corrected
+
+### Best Practices
+
+- **Validate before presenting URLs** - Don't show broken diagram links
+- **Use specific error context** - Leverage line numbers and error messages
+- **Maintain diagram semantics** - Keep user's intended diagram structure
+- **Handle edge cases gracefully** - Some errors may require manual intervention
+- **Provide clear feedback** - Explain what was fixed when auto-correcting
+
+### Error Handling Code Pattern
+
+\`\`\`typescript
+const result = await generatePlantUMLDiagram(code);
+if (isValidationError(result)) {
+  const fixed = autoFixSyntax(result.error_details);
+  if (fixed) {
+    return await generatePlantUMLDiagram(fixed);
+  }
+  return showErrorToUser(result.error_details);
+}
+return result; // Success
+\`\`\``
+              }
+            }
+          ]
+        };
+      }
+      throw new Error(`Unknown prompt: ${request.params.name}`);
+    });
   }
 
   async run() {
