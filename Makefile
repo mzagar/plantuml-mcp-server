@@ -79,6 +79,37 @@ test-ci: build-executable
 	@echo ""
 	@echo "🎉 All CI tests passed! Ready for deployment."
 
+# Internal shared release logic
+do-release:
+	@echo "🚀 Starting $(RELEASE_TYPE) release..."
+	@echo "📋 Checking working directory is clean..."
+	@git diff-index --quiet HEAD || (echo "❌ Working directory not clean. Commit changes first." && exit 1)
+	@echo "✅ Working directory clean"
+	@echo ""
+	@echo "⚡ Running CI tests..."
+	$(MAKE) test-ci
+	@echo ""
+	@echo "📦 Updating version ($(RELEASE_TYPE))..."
+	npm version $(RELEASE_TYPE)
+	@echo ""
+	@echo "📤 Pushing to GitHub with tags..."
+	git push --follow-tags
+	@echo ""
+	@echo "🚀 Publishing to npm..."
+	npm publish
+	@echo ""
+	@echo "🎉 $(RELEASE_TYPE) release completed successfully!"
+
+# Release targets
+release-patch:
+	$(MAKE) do-release RELEASE_TYPE=patch
+
+release-minor:
+	$(MAKE) do-release RELEASE_TYPE=minor
+
+release-major:
+	$(MAKE) do-release RELEASE_TYPE=major
+
 # Test with mcptools CLI
 test-mcp: build-executable
 	@echo "🧪 Testing with mcptools CLI..."
@@ -143,6 +174,9 @@ help:
 	@echo "  make test           - Test the server"
 	@echo "  make test-ci        - Fast CI tests (no external dependencies)"
 	@echo "  make test-mcp       - Test with mcptools CLI"
+	@echo "  make release-patch  - Create patch release (0.1.0 → 0.1.1)"
+	@echo "  make release-minor  - Create minor release (0.1.0 → 0.2.0)"
+	@echo "  make release-major  - Create major release (0.1.0 → 2.0.0)"
 	@echo "  make clean          - Clean build directory"
 	@echo "  make setup          - Full setup (install + build + instructions)"
 	@echo "  make setup-claude   - Show Claude Code setup instructions"
@@ -156,4 +190,4 @@ help:
 	@echo "  make test-mcp"
 	@echo "  PLANTUML_SERVER_URL=https://your-server.com make test-mcp"
 
-.PHONY: help install clean build build-executable dev run test test-ci test-mcp setup-claude init setup check-node
+.PHONY: help install clean build build-executable dev run test test-ci test-mcp release-patch release-minor release-major setup-claude init setup check-node
