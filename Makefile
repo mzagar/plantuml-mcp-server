@@ -60,6 +60,25 @@ test: build-executable
 	@echo "Server should be running. Check logs above for any errors."
 	@echo "Kill the background process manually if needed: pkill -f 'node $(DIST_DIR)/$(MAIN_FILE).js'"
 
+# Fast CI tests without external dependencies
+test-ci: build-executable
+	@echo "⚡ Running CI-optimized tests..."
+	@echo "📋 Testing TypeScript compilation..."
+	npx tsc --noEmit
+	@echo "✅ TypeScript compilation successful"
+	@echo ""
+	@echo "🔧 Testing tool schema validation..."
+	echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | node $(DIST_DIR)/$(MAIN_FILE).js 2>/dev/null | grep -q "generate_plantuml_diagram"
+	echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | node $(DIST_DIR)/$(MAIN_FILE).js 2>/dev/null | grep -q "encode_plantuml"
+	echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | node $(DIST_DIR)/$(MAIN_FILE).js 2>/dev/null | grep -q "decode_plantuml"
+	@echo "✅ All tools properly registered"
+	@echo ""
+	@echo "📚 Testing prompts registration..."
+	echo '{"jsonrpc":"2.0","method":"prompts/list","id":1}' | node $(DIST_DIR)/$(MAIN_FILE).js 2>/dev/null | grep -q "plantuml_error_handling"
+	@echo "✅ Prompts properly registered"
+	@echo ""
+	@echo "🎉 All CI tests passed! Ready for deployment."
+
 # Test with mcptools CLI
 test-mcp: build-executable
 	@echo "🧪 Testing with mcptools CLI..."
@@ -122,6 +141,7 @@ help:
 	@echo "  make run            - Build and run the server"
 	@echo "  make dev            - Run in development mode (watch)"
 	@echo "  make test           - Test the server"
+	@echo "  make test-ci        - Fast CI tests (no external dependencies)"
 	@echo "  make test-mcp       - Test with mcptools CLI"
 	@echo "  make clean          - Clean build directory"
 	@echo "  make setup          - Full setup (install + build + instructions)"
@@ -136,4 +156,4 @@ help:
 	@echo "  make test-mcp"
 	@echo "  PLANTUML_SERVER_URL=https://your-server.com make test-mcp"
 
-.PHONY: help install clean build build-executable dev run test test-mcp setup-claude init setup check-node
+.PHONY: help install clean build build-executable dev run test test-ci test-mcp setup-claude init setup check-node
