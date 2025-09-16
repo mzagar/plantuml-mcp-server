@@ -323,7 +323,7 @@ class PlantUMLMCPServer {
     "error_line": 3,
     "problematic_code": "invalid syntax line",
     "full_plantuml": "complete original code",
-    "context": "detailed error context"
+    "full_context": "detailed error context"
   },
   "retry_instructions": "Fix errors and retry"
 }
