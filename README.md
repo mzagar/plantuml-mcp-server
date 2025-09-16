@@ -98,18 +98,42 @@ cd plantuml-mcp-server
 make setup
 ```
 
-### Testing & Development
+### Development Commands
 
 ```bash
-# Test the server
-make test-mcp
+# Building & Running
+make build        # Clean build TypeScript to JavaScript
+make dev          # Development mode with watch
+make run          # Build and run the server locally
 
-# Development commands
-make install      # Install dependencies
-make build        # Build TypeScript to JavaScript  
-make run          # Build and run the server
-make dev          # Run in development mode (watch)
+# Testing
+make test         # Basic server functionality test
+make test-mcp     # Comprehensive testing with mcptools CLI
+make test-ci      # Fast CI tests (no external dependencies)
+
+# Setup & Installation  
+make install      # Install npm dependencies
+make setup        # Full setup (install + build + Claude Code config)
+make setup-claude # Show Claude Code MCP configuration instructions
+
+# Release Management
+make release-patch  # Create patch release (0.1.0 → 0.1.1)
+make release-minor  # Create minor release (0.1.0 → 0.2.0) 
+make release-major  # Create major release (0.1.0 → 2.0.0)
+
+# Utilities
+make clean        # Clean build directory
 make help         # Show all available commands
+```
+
+### Environment Variables
+
+```bash
+# Optional: Use custom PlantUML server
+export PLANTUML_SERVER_URL=https://your-server.com/plantuml
+
+# Then run any command
+make test-mcp
 ```
 
 ## License
