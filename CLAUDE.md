@@ -56,3 +56,4 @@ The server implements three MCP tools via the `PlantUMLMCPServer` class:
 
 ### Development Workflow
 The project uses TypeScript with strict type checking. The comprehensive Makefile provides all necessary commands for development, testing, and deployment. The server can be installed via `npx plantuml-mcp-server` after publishing to npm, or run locally via `make run`.
+- For this project always use public planuml server 'https://www.plantuml.com/plantuml' for rendering diagrams
