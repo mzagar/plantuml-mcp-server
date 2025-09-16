@@ -8,6 +8,18 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that p
 2. **`encode_plantuml`** - Encode PlantUML code for URL sharing
 3. **`decode_plantuml`** - Decode PlantUML from encoded strings
 
+### Available Prompts
+
+1. **`plantuml_error_handling`** - Guidelines for handling PlantUML syntax errors and implementing auto-fix workflows
+
+This prompt provides Claude instances with comprehensive instructions on how to:
+- Detect PlantUML syntax errors using native server validation
+- Implement intelligent auto-fix workflows for common syntax issues
+- Parse structured error responses and apply appropriate corrections
+- Handle validation failures gracefully with retry logic
+
+The prompt enables Claude to automatically detect and fix common PlantUML errors like missing tags, invalid arrow syntax, typos in keywords, and missing quotes, making PlantUML diagram generation more reliable and user-friendly.
+
 
 ## Quick Setup
 

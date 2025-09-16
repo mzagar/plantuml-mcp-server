@@ -130,6 +130,12 @@ test-mcp: build-executable
 	@echo ""
 	@echo "🔓 Testing decode_plantuml tool:"
 	@mcp call decode_plantuml --params '{"encoded_string":"LOqnQyCm48Lt_GfLKmoEjMJgbDHJ8IacO3gMitHjrCedeJkHlr-KX4AtuxlllRTdWI9rZUefa8lLexw8P7wsji1r-0fogKjbB2wH8CdWqcfp16gPBOkFOR7ZRZirD9-ETWKMB7RSVOo9109X6NBhLnCMJhHfPRqsCsCndVgJDbTSUctUST67d4slpHd1YNceEf1W-GI7_qAGGw_DONfjtbloE7npEr_0_I1vtJwTKcUCZztxoip8fhlX6xZNZ11ZmtiaNzVu2m00"}' node $(DIST_DIR)/$(MAIN_FILE).js
+	@echo ""
+	@echo "📚 Listing available prompts:"
+	@mcp prompts node $(DIST_DIR)/$(MAIN_FILE).js
+	@echo ""
+	@echo "🔍 Testing plantuml_error_handling prompt:"
+	@mcp get-prompt plantuml_error_handling -f pretty node $(DIST_DIR)/$(MAIN_FILE).js
 
 # Setup for Claude Code using CLI command
 setup-claude:
