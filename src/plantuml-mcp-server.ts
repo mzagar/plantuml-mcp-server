@@ -112,19 +112,18 @@ class PlantUMLMCPServer {
       const validationUrl = `${PLANTUML_SERVER_URL}/txt/${encoded}`;
       const response = await fetch(validationUrl);
       
-      // Check for error in headers (PlantUML returns 200 even for syntax errors)
+      // Use PlantUML's native error detection via PSystemError
       const errorMessage = response.headers.get('x-plantuml-diagram-error');
       
       if (errorMessage) {
-        // Extract error details from headers and body
+        // PlantUML detected an error via PSystemError - trust its judgment
         const errorLine = response.headers.get('x-plantuml-diagram-error-line');
-        const responseText = await response.text();
+        const fullTextOutput = await response.text();
         
-        // Extract problematic code from response text if available
+        // Extract problematic code from original source if line number available
         const lines = originalCode.split('\n');
         const lineNum = errorLine ? parseInt(errorLine, 10) : null;
         const problematicCode = lineNum && lineNum <= lines.length ? lines[lineNum - 1] : '';
-        
         
         return {
           isValid: false,
@@ -133,7 +132,7 @@ class PlantUMLMCPServer {
             line: lineNum,
             problematic_code: problematicCode?.trim() || '',
             full_plantuml: originalCode,
-            context: responseText
+            full_context: fullTextOutput
           }
         };
       }
@@ -172,7 +171,7 @@ class PlantUMLMCPServer {
                   error_line: validation.error.line,
                   problematic_code: validation.error.problematic_code,
                   full_plantuml: validation.error.full_plantuml,
-                  context: validation.error.context
+                  full_context: validation.error.full_context
                 },
                 retry_instructions: 'The PlantUML code has syntax errors. Please fix the errors and retry with corrected syntax.'
               }, null, 2)
